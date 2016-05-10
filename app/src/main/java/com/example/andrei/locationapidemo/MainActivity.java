@@ -1,6 +1,7 @@
 package com.example.andrei.locationapidemo;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.location.Location;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -33,18 +34,25 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private boolean mRequestLocationUpdates = false;
 
     private LocationRequest mLocationRequest;
+            Localizacion listaLocalizaciones[] = new Localizacion[10];
 
     private static int UPDATE_INTERVAL = 10000;
     private static int FATEST_INTERVAL = 5000;
     private static int DISPLACEMENT = 10;
 
-    private TextView lblLocation;
+    private TextView lblLocation, lblmensaje;
     private Button btnShowLocation, btnStartLocationUpdates;
+
+    //Variables funcionalidades
+
+    int contLocalizacion = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        DBHandler db = new DBHandler(this);
 
         lblLocation = (TextView) findViewById(R.id.lblLocation);
         btnShowLocation = (Button) findViewById(R.id.buttonShowLocation);
@@ -66,6 +74,16 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             @Override
             public void onClick(View v) {
                 togglePeriodLocationUpdates();
+            }
+        });
+
+        Button btnDataBase =(Button) findViewById(R.id.btn_database);
+
+        btnDataBase.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v)
+            {
+                Intent dbmanager = new Intent(getApplicationContext(), AndroidDatabaseManager.class);
+                startActivity(dbmanager);
             }
         });
     }
@@ -105,13 +123,37 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     private void displayLocation() {
+        //Defino variable para solicitar datos de ultima localización
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if(mLastLocation != null) {
-            double latitude = mLastLocation.getLatitude();
-            double longtitude = mLastLocation.getLongitude();
 
-            lblLocation.setText(latitude + ", " + longtitude);
-        } else {
+        //Definición de variables para conectar BD
+        DBHandler dbHandler = new DBHandler(this);
+
+        if(mLastLocation != null) {
+
+            //Capturando valores de ultima localizacion en objeto
+            listaLocalizaciones[contLocalizacion] = new Localizacion();
+
+            listaLocalizaciones[contLocalizacion].time = mLastLocation.getTime();
+            listaLocalizaciones[contLocalizacion].latitude = mLastLocation.getLatitude();
+            listaLocalizaciones[contLocalizacion].longtitude = mLastLocation.getLongitude();
+            listaLocalizaciones[contLocalizacion].speed = mLastLocation.getSpeed();
+
+            lblLocation.setText(listaLocalizaciones[contLocalizacion].latitude + ", " + listaLocalizaciones[contLocalizacion].longtitude);
+
+            //crear registro de localización en la BD
+            dbHandler.addLocation(listaLocalizaciones[contLocalizacion]);
+            //registrarLocalizacion(latitude, longitude, time, speed, contLocalizacion);
+
+            //El objeto Localizacion "listaLocalizaciones" solo tendra cargado los ultimos diez registros
+            contLocalizacion = contLocalizacion+1;
+            //En la variable ListaLocalizaciones solo se almacenaran las ultimas 10 localizaciones identificadas.
+            if(contLocalizacion > 9)
+            {
+                contLocalizacion = 0;
+            }
+        }
+        else {
             lblLocation.setText("Couldn't get the location. Make sure location is enabled on the device");
         }
     }
