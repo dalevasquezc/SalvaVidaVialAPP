@@ -44,8 +44,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private Button btnShowLocation, btnStartLocationUpdates;
 
     //Variables funcionalidades
-
-    int contLocalizacion = 0;
+    boolean firstItem = false;  //Primer elemento de localización registrado (No tiene antecesor de comparación).
+    int contLocalizacion = 0; //Registro posición en objeto localización, del ultimo registro.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,9 +141,25 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
             lblLocation.setText(listaLocalizaciones[contLocalizacion].latitude + ", " + listaLocalizaciones[contLocalizacion].longtitude);
 
+            if((contLocalizacion == 0) && (firstItem == false))
+            {
+                listaLocalizaciones[contLocalizacion].delta = 0; //El primer elemento no tiene antecesor contra el cual obtener delta
+                firstItem = true;
+            }
+            else
+            {
+                Log.d(TAG, "CALCULA DELTA--------");
+                listaLocalizaciones[contLocalizacion].delta = getDelta(listaLocalizaciones[contLocalizacion-1].time, listaLocalizaciones[contLocalizacion-1].speed,
+                        listaLocalizaciones[contLocalizacion].time, listaLocalizaciones[contLocalizacion].speed);
+                String deltastring = String.valueOf(listaLocalizaciones[contLocalizacion].delta);
+                Log.d(TAG, "Delta CALCULADO " + deltastring );
+            }
+
             //crear registro de localización en la BD
             dbHandler.addLocation(listaLocalizaciones[contLocalizacion]);
             //registrarLocalizacion(latitude, longitude, time, speed, contLocalizacion);
+
+
 
             //El objeto Localizacion "listaLocalizaciones" solo tendra cargado los ultimos diez registros
             contLocalizacion = contLocalizacion+1;
@@ -230,6 +246,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public void onLocationChanged(Location location) {
         mLastLocation = location;
 
+        //Muestra mensaje temporal
         Toast.makeText(getApplicationContext(), "Location changed!", Toast.LENGTH_SHORT).show();
 
         displayLocation();
@@ -239,4 +256,13 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public void onConnectionFailed(ConnectionResult connectionResult) {
         Log.i(TAG, "Connection failed: " + connectionResult.getErrorCode());
     }
+
+    private double getDelta(long timeOne, float speedOne, long timeTwo, float speedTwo)
+    {
+        double delta;
+
+        delta = (speedTwo - speedOne)/(timeTwo - timeOne);
+        return delta;
+    }
+
 }
