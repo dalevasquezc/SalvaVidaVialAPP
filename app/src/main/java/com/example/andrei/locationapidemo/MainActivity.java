@@ -272,7 +272,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         double deltaAvg = 0d;
 
 //        for (){
-//            //Clacular los deltas acá
+//            //Clacular los deltas acá hhhhh
 //
 //        }
         //Y Luego calcular el porcentaje de diferencua que hay dentro de cada delta.
