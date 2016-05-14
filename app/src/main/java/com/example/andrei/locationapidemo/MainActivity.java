@@ -45,6 +45,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     private TextView lblLocation, lblmensaje;
     private Button btnShowLocation, btnStartLocationUpdates;
+    private List<Location> locations = null;
 
     //Variables funcionalidades
     boolean firstItem = false;  //Primer elemento de localización registrado (No tiene antecesor de comparación).
@@ -55,6 +56,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        locations = new ArrayList<>();
 
         DBHandler db = new DBHandler(this);
 
@@ -89,8 +92,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         btnDataBase.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v)
             {
-                Intent dbmanager = new Intent(getApplicationContext(), AndroidDatabaseManager.class);
-                startActivity(dbmanager);
+//                Intent dbmanager = new Intent(getApplicationContext(), AndroidDatabaseManager.class);
+//                startActivity(dbmanager);
             }
         });
     }
@@ -112,7 +115,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             startLocationUpdates();
         }
     }
-
 
     @Override
     protected void onStop() {
@@ -154,8 +156,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             //crear registro de localización en la BD
             dbHandler.addLocation(listaLocalizaciones[contLocalizacion]);
             //registrarLocalizacion(latitude, longitude, time, speed, contLocalizacion);
-
-
 
             //El objeto Localizacion "listaLocalizaciones" solo tendra cargado los ultimos diez registros
             contLocalizacion = contLocalizacion+1;
@@ -240,6 +240,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     @Override
     public void onLocationChanged(Location location) {
+
+        locations.add(location);
+
+
         mLastLocation = location;
 
         //Muestra mensaje temporal
@@ -253,6 +257,20 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         Log.i(TAG, "Connection failed: " + connectionResult.getErrorCode());
     }
 
+
+    private void CalcDelta(){
+//        locations.size() - 1;
+        double deltaMax = 0d;
+        double deltaMin = 0d;
+        double deltaAvg = 0d;
+
+//        for (){
+//            //Clacular los deltas acá hhhhh
+//
+//        }
+        //Y Luego calcular el porcentaje de diferencua que hay dentro de cada delta.
+    }
+
     private double getDelta(long timeOne, float speedOne, long timeTwo, float speedTwo)
     {
         double delta;
@@ -260,5 +278,4 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         delta = (speedTwo - speedOne)/(timeTwo - timeOne);
         return delta;
     }
-
 }
