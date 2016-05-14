@@ -20,6 +20,7 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +38,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private boolean mRequestLocationUpdates = false;
 
     private LocationRequest mLocationRequest;
-            Localizacion ultimaLocalizacion = new Localizacion();
 
     private static int UPDATE_INTERVAL = 10000;
     private static int FATEST_INTERVAL = 5000;
@@ -45,24 +45,21 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     private TextView lblLocation, lblmensaje;
     private Button btnShowLocation, btnStartLocationUpdates;
-    private List<Location> locations = null;
 
     //Variables funcionalidades
     boolean firstItem = false;  //Primer elemento de localización registrado (No tiene antecesor de comparación).
-    int contLocalizacion = 0; //Registro posición en objeto localización, del ultimo registro.
-    private List<Location> locations = null;
+    private List<Localizacion> listaLocalizacion = null;
+    private Localizacion ultimaLocalizacion = new Localizacion();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        locations = new ArrayList<>();
-
         DBHandler db = new DBHandler(this);
 
         //Instancio objeto que captura localizaciones
-        locations = new ArrayList<Location>();
+        listaLocalizacion = new ArrayList<Localizacion>();
 
         lblLocation = (TextView) findViewById(R.id.lblLocation);
         btnShowLocation = (Button) findViewById(R.id.buttonShowLocation);
@@ -140,30 +137,38 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         if(mLastLocation != null) {
 
+            //Objeto Localización para añadir a la lista
+            ultimaLocalizacion.latitude = mLastLocation.getLatitude();
+            ultimaLocalizacion.longtitude = mLastLocation.getLongitude();
+            ultimaLocalizacion.time = mLastLocation.getTime();
+            ultimaLocalizacion.speed = mLastLocation.getSpeed();
+
             //Añado elemento a la lista
-            locations.add(mLastLocation);
+            listaLocalizacion.add(ultimaLocalizacion);
 
-            locations.set(locations.size(), locations.get(t))
+            int posUltElement = listaLocalizacion.size() - 1; //La ultima posición de la lista es la cantidad total de elementos menos 1 porque arranca desde el elemento "0".
 
-            lblLocation.setText(ultimaLocalizacion.latitude + ", " + ultimaLocalizacion.longtitude);
+            lblLocation.setText(listaLocalizacion.get(posUltElement).latitude + ", " + listaLocalizacion.get(posUltElement).longtitude);
 
-                Log.d(TAG, "CALCULA DELTA--------");
-                ultimaLocalizacion.delta = getDelta(listaLocalizaciones[contLocalizacion-1].time, listaLocalizaciones[contLocalizacion-1].speed,
-                        listaLocalizaciones[contLocalizacion].time, listaLocalizaciones[contLocalizacion].speed);
-                String deltastring = String.valueOf(listaLocalizaciones[contLocalizacion].delta);
-                Log.d(TAG, "Delta CALCULADO " + deltastring );
+            //Calcular delta para la ultima localización
+            if(listaLocalizacion.size() == 1)
+            {
+                ultimaLocalizacion.delta = 0;
+                listaLocalizacion.set(posUltElement, ultimaLocalizacion);
+            }
+            else
+            {
+                listaLocalizacion.get(posUltElement).delta = getDelta(listaLocalizacion.get(posUltElement - 1).time, listaLocalizacion.get(posUltElement - 1).speed,
+                        listaLocalizacion.get(posUltElement).time, listaLocalizacion.get(posUltElement).speed);
 
-            //crear registro de localización en la BD
-            dbHandler.addLocation(listaLocalizaciones[contLocalizacion]);
+            }
+
+
+
+            //crear registro de la ultima localización en la BD
+            dbHandler.addLocation(listaLocalizacion.get(posUltElement));
             //registrarLocalizacion(latitude, longitude, time, speed, contLocalizacion);
 
-            //El objeto Localizacion "listaLocalizaciones" solo tendra cargado los ultimos diez registros
-            contLocalizacion = contLocalizacion+1;
-            //En la variable ListaLocalizaciones solo se almacenaran las ultimas 10 localizaciones identificadas.
-            if(contLocalizacion > 9)
-            {
-                contLocalizacion = 0;
-            }
         }
         else {
             lblLocation.setText("Couldn't get the location. Make sure location is enabled on the device");
@@ -240,9 +245,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     @Override
     public void onLocationChanged(Location location) {
-
-        locations.add(location);
-
 
         mLastLocation = location;
 
