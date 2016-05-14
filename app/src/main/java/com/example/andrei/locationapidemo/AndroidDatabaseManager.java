@@ -1,7 +1,7 @@
 package com.example.andrei.locationapidemo;
 
 //all required import files
-//Esta actividad permite acceder al contenido de las tablas en la BD
+//Esta actividad permite acceder al contenido de las tablas en la BD - Disponible en GitHub
 
 import java.util.ArrayList;
 import java.util.LinkedList;
