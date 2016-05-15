@@ -1,8 +1,10 @@
 package com.example.andrei.locationapidemo;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.location.Location;
+import android.os.Build;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -39,8 +41,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     private LocationRequest mLocationRequest;
 
-    private static int UPDATE_INTERVAL = 10000;
-    private static int FATEST_INTERVAL = 5000;
+    private static int UPDATE_INTERVAL = 5000; //Intervalo de tiempo para solicitar localización
+    private static int FATEST_INTERVAL = 3000;
     private static int DISPLACEMENT = 10;
 
     private TextView lblLocation, lblmensaje;
@@ -49,7 +51,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     //Variables funcionalidades
     boolean firstItem = false;  //Primer elemento de localización registrado (No tiene antecesor de comparación).
     private List<Localizacion> listaLocalizacion = null;
-    private Localizacion ultimaLocalizacion = new Localizacion();
+    //private Localizacion ultimaLocalizacion = new Localizacion();
+
+    //Variables de prueba
+    int contLocalizaciones = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,8 +94,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         btnDataBase.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v)
             {
-//                Intent dbmanager = new Intent(getApplicationContext(), AndroidDatabaseManager.class);
-//                startActivity(dbmanager);
+                Intent dbmanager = new Intent(getApplicationContext(), AndroidDatabaseManager.class);
+                startActivity(dbmanager);
             }
         });
     }
@@ -128,14 +133,23 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         stopLocationUpdates();
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private void displayLocation() {
         //Defino variable para solicitar datos de ultima localización
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        Localizacion ultimaLocalizacion = new Localizacion();
+        Log.d(TAG, "Nueva localización identificada");
 
         //Definición de variables para conectar BD
         DBHandler dbHandler = new DBHandler(this);
 
+        //Determinar si existen diferencias con la ultima localización reconocida
+        boolean localizacionDiferente = false;
+
         if(mLastLocation != null) {
+
+            Log.d(TAG, "Cantidad de cambios de localización: " +  contLocalizaciones);
+            contLocalizaciones++;
 
             //Objeto Localización para añadir a la lista
             ultimaLocalizacion.latitude = mLastLocation.getLatitude();
@@ -143,31 +157,52 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             ultimaLocalizacion.time = mLastLocation.getTime();
             ultimaLocalizacion.speed = mLastLocation.getSpeed();
 
-            //Añado elemento a la lista
-            listaLocalizacion.add(ultimaLocalizacion);
-
-            int posUltElement = listaLocalizacion.size() - 1; //La ultima posición de la lista es la cantidad total de elementos menos 1 porque arranca desde el elemento "0".
-
-            lblLocation.setText(listaLocalizacion.get(posUltElement).latitude + ", " + listaLocalizacion.get(posUltElement).longtitude);
+            int posUltElement = listaLocalizacion.size() - 1;//La ultima posición de la lista es la cantidad total de elementos menos 1 porque arranca desde el elemento "0".
 
             //Calcular delta para la ultima localización
-            if(listaLocalizacion.size() == 1)
+            if(listaLocalizacion.size() == 0)
             {
                 ultimaLocalizacion.delta = 0;
-                listaLocalizacion.set(posUltElement, ultimaLocalizacion);
+                ultimaLocalizacion.deltapromedio = 0;
+
+                //Añadiendo el primer elemento a la lista;
+                listaLocalizacion.add(ultimaLocalizacion);
+
+                dbHandler.addLocation(listaLocalizacion.get(0));
+            }
+            else if(ultimaLocalizacion.time != listaLocalizacion.get(posUltElement).time) //Compara la ultima localización versus la anterior
+            {
+                ultimaLocalizacion.delta = getDelta(listaLocalizacion.get(posUltElement).time, listaLocalizacion.get(posUltElement).speed,
+                        ultimaLocalizacion.time, ultimaLocalizacion.speed);
+
+                //Registro ultima localización con cambios reales.
+                listaLocalizacion.add(ultimaLocalizacion);
+                localizacionDiferente = true;
             }
             else
             {
-                listaLocalizacion.get(posUltElement).delta = getDelta(listaLocalizacion.get(posUltElement - 1).time, listaLocalizacion.get(posUltElement - 1).speed,
-                        listaLocalizacion.get(posUltElement).time, listaLocalizacion.get(posUltElement).speed);
-
+                Log.d(TAG, "No existe cambio en tiempos de localización");
             }
 
+            //Calcula delta promedio solo si existen cambios con la ultima localización conocida
+            if(localizacionDiferente == true)
+            {
+                //Actualizo posición del ultimo elemento
+                posUltElement = listaLocalizacion.size() - 1;
 
+                ultimaLocalizacion.deltapromedio = getDeltaPromedio();
+                ultimaLocalizacion.porcentajeDif = getPorcentajeDiferencia();
 
-            //crear registro de la ultima localización en la BD
-            dbHandler.addLocation(listaLocalizacion.get(posUltElement));
-            //registrarLocalizacion(latitude, longitude, time, speed, contLocalizacion);
+                //Actualizar atributos de localización
+                listaLocalizacion.set(posUltElement, ultimaLocalizacion);
+
+                //crear registro de la ultima localización en la BD
+                dbHandler.addLocation(listaLocalizacion.get(posUltElement));
+                //registrarLocalizacion(latitude, longitude, time, speed, contLocalizacion);
+            }
+
+            posUltElement = listaLocalizacion.size() - 1;//Actualizo posición del ultimo elemento
+            lblLocation.setText(listaLocalizacion.get(posUltElement).latitude + ", " + listaLocalizacion.get(posUltElement).longtitude);
 
         }
         else {
@@ -275,9 +310,55 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     private double getDelta(long timeOne, float speedOne, long timeTwo, float speedTwo)
     {
-        double delta;
+        Log.d(TAG, "Velocidad 2: " + speedTwo + " Velocidad 1:" + speedOne + " Tiempo 2: " + timeTwo + " Tiempo 1: " + timeOne  );
+        double delta, difVelocidad, difTime;
 
+        difVelocidad = speedTwo - speedOne;
+        difTime = timeTwo - timeOne;
         delta = (speedTwo - speedOne)/(timeTwo - timeOne);
+
+        //Imprimir la delta calculada.
+        Log.d(TAG, "Delta del nodo: " + delta + " Diferencia entre velocidad: " + difVelocidad + " Diferencia Tiempo: " + difTime);
         return delta;
+    }
+
+    private double getDeltaPromedio()
+    {
+        double deltaPromedio, sumatoriaDeltas = 0;
+        int registrosMaximos = 15, deltasLeidas = 0; //IMPLEMENTAR COMO PARAMETRO
+
+        //Leer menos elementos de la lista en caso que aún no existan 15 localizaciones.
+        if(listaLocalizacion.size() < 15)
+        {
+            registrosMaximos = listaLocalizacion.size();
+        }
+
+        //lee las ultimas "registrosMaximos" deltas
+        //Variable i, con el recorro la lista en el orden: Ultimo - Primero
+        //Variable deltasLeidas, leo la cantidad maxima de registros.
+        for(int i = (listaLocalizacion.size() - 1); deltasLeidas < registrosMaximos; i--)
+        {
+            sumatoriaDeltas = sumatoriaDeltas + listaLocalizacion.get(i).delta;
+            deltasLeidas++;
+        }
+
+        //Delta promedio de la localización
+        deltaPromedio = sumatoriaDeltas/registrosMaximos;
+
+        return deltaPromedio;
+    }
+
+    private double getPorcentajeDiferencia()
+    {
+        //Este metodo determina el porcentaje de diferencia entre el delta de la localización vs el promedio de deltas de localizaciones
+
+
+        //Defino variables
+        double porcentajeDiferencia;
+        int ultPos = listaLocalizacion.size() - 1;
+
+        porcentajeDiferencia= (listaLocalizacion.get(ultPos).delta * 100) / listaLocalizacion.get(ultPos).deltapromedio;
+
+        return porcentajeDiferencia;
     }
 }
