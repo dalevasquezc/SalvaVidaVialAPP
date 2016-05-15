@@ -35,6 +35,8 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String KEY_VELOCIDAD = "velocidad";
     private static final String KEY_TIME = "time";
     private static final String KEY_DELTA = "delta";
+    private static final String KEY_DELTAPROMEDIO = "delta_promedio";
+    private static final String KEY_PORCENTAJE_DIF = "porcentaje_diferencia";
 
     //Parametros table name
     private static final String TABLE_PARAMETRO = "parametro";
@@ -53,7 +55,7 @@ public class DBHandler extends SQLiteOpenHelper {
     {
         String CREATE_LOCATION_TABLE = "CREATE TABLE " + TABLE_LOCALIZACION + "("
                 + KEY_ID_LOCALIZACION + " INTEGER PRIMARY KEY AUTOINCREMENT," + KEY_LATITUD + " FLOAT," + KEY_LONGITUD + " FLOAT," + KEY_VELOCIDAD + " FLOAT," + KEY_TIME + " FLOAT,"
-                + KEY_DELTA + " FLOAT" + ")";
+                + KEY_DELTA + " FLOAT," + KEY_DELTAPROMEDIO + " FLOAT," + KEY_PORCENTAJE_DIF + " FLOAT" + ")";
         db.execSQL(CREATE_LOCATION_TABLE);
         String CREATE_PARAMETRO_TABLE = "CREATE TABLE " + TABLE_PARAMETRO + "(" + KEY_TIPO_PARAMETRO + " INTEGER PRIMARY KEY," + KEY_CONTENIDO + " INTEGER" + ")";
         db.execSQL(CREATE_PARAMETRO_TABLE);
@@ -81,6 +83,8 @@ public class DBHandler extends SQLiteOpenHelper {
         values.put(KEY_VELOCIDAD, localizacion.speed);  //Escribe velocidad
         values.put(KEY_TIME, localizacion.time); // Escribe tiempo
         values.put(KEY_DELTA, localizacion.delta);
+        values.put(KEY_DELTAPROMEDIO, localizacion.deltapromedio);
+        values.put(KEY_PORCENTAJE_DIF, localizacion.porcentajeDif);
 
         //inserting row
         db.insert(TABLE_LOCALIZACION, null, values);
@@ -118,6 +122,8 @@ public class DBHandler extends SQLiteOpenHelper {
             localizacion.speed = Float.parseFloat(cursor.getString(3));
             localizacion.time = Long.parseLong(cursor.getString(4));
             localizacion.delta = Double.parseDouble(cursor.getString(5));
+            localizacion.deltapromedio = Double.parseDouble(cursor.getString(6));
+            localizacion.porcentajeDif = Double.parseDouble(cursor.getString(7));
             cursor.close();
         }
         else
@@ -164,6 +170,8 @@ public class DBHandler extends SQLiteOpenHelper {
         values.put(KEY_VELOCIDAD, localizacion.speed);
         values.put(KEY_TIME, localizacion.time);
         values.put(KEY_DELTA, localizacion.delta);
+        values.put(KEY_DELTAPROMEDIO, localizacion.deltapromedio);
+        values.put(KEY_PORCENTAJE_DIF, localizacion.porcentajeDif);
 
         //updating row
         return db.update(TABLE_LOCALIZACION, values, KEY_ID_LOCALIZACION + " = ?", new String[]{String.valueOf(localizacion.idLocalizacion)});
