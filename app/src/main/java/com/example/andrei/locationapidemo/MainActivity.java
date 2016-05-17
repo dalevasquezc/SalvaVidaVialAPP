@@ -257,11 +257,29 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     protected void startLocationUpdates() {
+
+        //Borrar localizaciones en la lista, garantizar un nuevo recorrido
+        listaLocalizacion.clear();
+
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
     protected void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+
+        //Instanciar objeto para registrar recorrido en BD
+        DBHandler dbHandler = new DBHandler(this);
+
+        //Agregar metodos para obtener datos de recorrido.
+        Recorrido nuevoRecorrido = new Recorrido();
+
+        nuevoRecorrido.tiempoTotal = getTiempoTotal();
+        nuevoRecorrido.velocidadPromedi = getVelocidadPromedio();
+        nuevoRecorrido.velocidadMaxima = getVelocidadMaxima();
+
+        //Registrando datos generales del ultimo recorrido
+        dbHandler.addRecorrido(nuevoRecorrido);
+
     }
 
     @Override
@@ -294,23 +312,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         Log.i(TAG, "Connection failed: " + connectionResult.getErrorCode());
     }
 
-
-    private void CalcDelta(){
-//        locations.size() - 1;
-        double deltaMax = 0d;
-        double deltaMin = 0d;
-        double deltaAvg = 0d;
-
-//        for (){
-//            //Clacular los deltas acá hhhhh
-//
-//        }
-        //Y Luego calcular el porcentaje de diferencua que hay dentro de cada delta.
-    }
-
     private double getDelta(long timeOne, float speedOne, long timeTwo, float speedTwo)
     {
-        Log.d(TAG, "Velocidad 2: " + speedTwo + " Velocidad 1:" + speedOne + " Tiempo 2: " + timeTwo + " Tiempo 1: " + timeOne  );
         double delta, difVelocidad, difTime;
 
         difVelocidad = speedTwo - speedOne;
@@ -318,7 +321,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         delta = (speedTwo - speedOne)/(timeTwo - timeOne);
 
         //Imprimir la delta calculada.
-        Log.d(TAG, "Delta del nodo: " + delta + " Diferencia entre velocidad: " + difVelocidad + " Diferencia Tiempo: " + difTime);
         return delta;
     }
 
@@ -360,5 +362,62 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         porcentajeDiferencia= (listaLocalizacion.get(ultPos).delta * 100) / listaLocalizacion.get(ultPos).deltapromedio;
 
         return porcentajeDiferencia;
+    }
+
+    private double getTiempoTotal()
+    {
+        double tiempoTotal = 0;
+        int ultPos = listaLocalizacion.size() - 1;
+
+        if(listaLocalizacion != null) {
+            tiempoTotal = listaLocalizacion.get(ultPos).time - listaLocalizacion.get(0).time;
+        }
+        else
+        {
+            Log.d(TAG, "La lista se encuentra vacia: Sin localizaciones en memoria");
+        }
+
+        return tiempoTotal;
+    }
+
+    private double getVelocidadPromedio()
+    {
+        double velocidadPromedio, sumatoriaVelocidad = 0;
+
+        if(listaLocalizacion != null)
+        {
+            for (int i = 0; i < listaLocalizacion.size(); i++) {
+                sumatoriaVelocidad = sumatoriaVelocidad + listaLocalizacion.get(i).speed;
+            }
+        }
+        else
+        {
+            Log.d(TAG, "La lista se encuentra vacia: Sin localizaciones en memoria");
+        }
+
+        velocidadPromedio = sumatoriaVelocidad/listaLocalizacion.size();
+
+        return velocidadPromedio;
+    }
+
+    private double getVelocidadMaxima()
+    {
+        double maxVelocidad = 0;
+
+        if(listaLocalizacion != null)
+        {
+            for (int i = 0; i < listaLocalizacion.size(); i++)
+            {
+                if(listaLocalizacion.get(i).speed > maxVelocidad)
+                {
+                    maxVelocidad = listaLocalizacion.get(i).speed;
+                }
+            }
+        }
+        else
+        {
+            Log.d(TAG, "La lista se encuentra vacia: Sin localizaciones en memoria");
+        }
+        return maxVelocidad;
     }
 }

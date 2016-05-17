@@ -45,6 +45,15 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String KEY_TIPO_PARAMETRO = "Tipo_parametro";
     private static final String KEY_CONTENIDO = "Contenido";
 
+    //Recorrido Table name
+    private static final String TABLE_RECORRIDO = "recorrido";
+
+    //Columnas table recorrido
+    private static final String KEY_ID_TABLE_RECORRIDO = "Id_recorrido";
+    private static final String KEY_TIEMPO_TOTAL = "Tiempo_Total";
+    private static final String KEY_VELOCIDAD_PROMEDIO = "Velocidad_Promedio";
+    private static final String KEY_VELOCIDAD_MAXIMA = "Velocidad_Maxima";
+
     public DBHandler(Context context)
     {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -59,6 +68,9 @@ public class DBHandler extends SQLiteOpenHelper {
         db.execSQL(CREATE_LOCATION_TABLE);
         String CREATE_PARAMETRO_TABLE = "CREATE TABLE " + TABLE_PARAMETRO + "(" + KEY_TIPO_PARAMETRO + " INTEGER PRIMARY KEY," + KEY_CONTENIDO + " INTEGER" + ")";
         db.execSQL(CREATE_PARAMETRO_TABLE);
+        String CREATE_RECORRIDO_TABLE = "CREATE TABLE " + TABLE_RECORRIDO + "(" + KEY_ID_TABLE_RECORRIDO + " INTEGER PRIMARY KEY," + KEY_TIEMPO_TOTAL + " FLOAT," + KEY_VELOCIDAD_PROMEDIO
+                + " FLOAT," + KEY_VELOCIDAD_MAXIMA + "FLOAT" + ")";
+        db.execSQL(CREATE_RECORRIDO_TABLE);
     }
 
     @Override
@@ -70,6 +82,9 @@ public class DBHandler extends SQLiteOpenHelper {
         onCreate(db);
 
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PARAMETRO);
+        onCreate(db);
+
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_RECORRIDO);
         onCreate(db);
     }
 
@@ -99,6 +114,18 @@ public class DBHandler extends SQLiteOpenHelper {
         values.put(KEY_CONTENIDO, contenido);
 
         db.insert(TABLE_PARAMETRO, null, values);
+        db.close();
+    }
+
+    public void addRecorrido(Recorrido recorrido)
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_TIEMPO_TOTAL, recorrido.tiempoTotal);
+        values.put(KEY_VELOCIDAD_PROMEDIO, recorrido.velocidadPromedi);
+        values.put(KEY_VELOCIDAD_MAXIMA, recorrido.velocidadMaxima);
+
+        db.insert(TABLE_RECORRIDO, null, values);
         db.close();
     }
 
@@ -159,7 +186,6 @@ public class DBHandler extends SQLiteOpenHelper {
         return parametro;
     }
 
-
     //Actualizar registros en la base de datos
     public int updateLocalizacion(Localizacion localizacion)
     {
@@ -177,11 +203,29 @@ public class DBHandler extends SQLiteOpenHelper {
         return db.update(TABLE_LOCALIZACION, values, KEY_ID_LOCALIZACION + " = ?", new String[]{String.valueOf(localizacion.idLocalizacion)});
     }
 
+    public int updateRecorrido(Recorrido recorrido)
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_TIEMPO_TOTAL, recorrido.tiempoTotal);
+        values.put(KEY_VELOCIDAD_PROMEDIO, recorrido.velocidadPromedi);
+        values.put(KEY_VELOCIDAD_MAXIMA, recorrido.velocidadMaxima);
+
+        return db.update(TABLE_RECORRIDO, values, KEY_ID_TABLE_RECORRIDO + " = ?", new String[]{String.valueOf(recorrido.idRecorrido)});
+    }
+
     //Eliminar registros
     public void deleteLocation(Localizacion localizacion)
     {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_LOCALIZACION, KEY_ID_LOCALIZACION + " = ?", new String[]{ String.valueOf(localizacion.idLocalizacion)});
+        db.close();
+    }
+
+    public void deleteRecorrido(Recorrido recorrido)
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_RECORRIDO, KEY_ID_TABLE_RECORRIDO + " = ?", new String[]{ String.valueOf(recorrido.idRecorrido)});
         db.close();
     }
 
