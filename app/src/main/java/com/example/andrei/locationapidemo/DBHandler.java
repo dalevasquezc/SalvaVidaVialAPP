@@ -69,7 +69,7 @@ public class DBHandler extends SQLiteOpenHelper {
         String CREATE_PARAMETRO_TABLE = "CREATE TABLE " + TABLE_PARAMETRO + "(" + KEY_TIPO_PARAMETRO + " INTEGER PRIMARY KEY," + KEY_CONTENIDO + " INTEGER" + ")";
         db.execSQL(CREATE_PARAMETRO_TABLE);
         String CREATE_RECORRIDO_TABLE = "CREATE TABLE " + TABLE_RECORRIDO + "(" + KEY_ID_TABLE_RECORRIDO + " INTEGER PRIMARY KEY," + KEY_TIEMPO_TOTAL + " FLOAT," + KEY_VELOCIDAD_PROMEDIO
-                + " FLOAT," + KEY_VELOCIDAD_MAXIMA + "FLOAT" + ")";
+                + " FLOAT," + KEY_VELOCIDAD_MAXIMA + " FLOAT" + ")";
         db.execSQL(CREATE_RECORRIDO_TABLE);
     }
 
@@ -146,7 +146,7 @@ public class DBHandler extends SQLiteOpenHelper {
             localizacion.idLocalizacion = Integer.parseInt(cursor.getString(0));
             localizacion.latitude = Double.parseDouble(cursor.getString(1));
             localizacion.longtitude = Double.parseDouble(cursor.getString(2));
-            localizacion.speed = Float.parseFloat(cursor.getString(3));
+            localizacion.speed = Double.parseDouble(cursor.getString(3));
             localizacion.time = Long.parseLong(cursor.getString(4));
             localizacion.delta = Double.parseDouble(cursor.getString(5));
             localizacion.deltapromedio = Double.parseDouble(cursor.getString(6));

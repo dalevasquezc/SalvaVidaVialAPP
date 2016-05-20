@@ -5,8 +5,7 @@ package com.example.andrei.locationapidemo;
  */
 public class Localizacion {
 
-    double latitude, longtitude, delta, deltapromedio, porcentajeDif;;
+    double latitude, longtitude, delta, deltapromedio, porcentajeDif, speed;
     long time;
-    float speed;
     int idRecorrido, idLocalizacion;
 }
