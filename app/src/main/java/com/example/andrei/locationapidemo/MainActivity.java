@@ -7,6 +7,7 @@ import android.location.Location;
 import android.os.Build;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.FloatMath;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -155,7 +156,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             ultimaLocalizacion.latitude = mLastLocation.getLatitude();
             ultimaLocalizacion.longtitude = mLastLocation.getLongitude();
             ultimaLocalizacion.time = mLastLocation.getTime();
-            ultimaLocalizacion.speed = mLastLocation.getSpeed();
 
             int posUltElement = listaLocalizacion.size() - 1;//La ultima posición de la lista es la cantidad total de elementos menos 1 porque arranca desde el elemento "0".
 
@@ -164,6 +164,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             {
                 ultimaLocalizacion.delta = 0;
                 ultimaLocalizacion.deltapromedio = 0;
+                ultimaLocalizacion.speed = getVelocidad(); //Velocidad en Ft/Seg
 
                 //Añadiendo el primer elemento a la lista;
                 listaLocalizacion.add(ultimaLocalizacion);
@@ -192,6 +193,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
                 ultimaLocalizacion.deltapromedio = getDeltaPromedio();
                 ultimaLocalizacion.porcentajeDif = getPorcentajeDiferencia();
+                ultimaLocalizacion.speed = getVelocidad();
 
                 //Actualizar atributos de localización
                 listaLocalizacion.set(posUltElement, ultimaLocalizacion);
@@ -312,7 +314,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         Log.i(TAG, "Connection failed: " + connectionResult.getErrorCode());
     }
 
-    private double getDelta(long timeOne, float speedOne, long timeTwo, float speedTwo)
+    private double getDelta(long timeOne, double speedOne, long timeTwo, double speedTwo)
     {
         double delta, difVelocidad, difTime;
 
@@ -419,5 +421,24 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             Log.d(TAG, "La lista se encuentra vacia: Sin localizaciones en memoria");
         }
         return maxVelocidad;
+    }
+
+    private double getVelocidad()
+    {
+        double velocidad;
+        int ultPos = listaLocalizacion.size() - 1;
+
+
+        if(listaLocalizacion.size() <= 1)
+        {
+            velocidad = 0;
+        }
+        else
+        {
+            velocidad = Math.sqrt(Math.pow(listaLocalizacion.get(ultPos).latitude - listaLocalizacion.get(ultPos - 1).latitude, 2) + Math.pow(listaLocalizacion.get(ultPos).longtitude -
+            listaLocalizacion.get(ultPos - 1).longtitude,2)) / (listaLocalizacion.get(ultPos).time - listaLocalizacion.get(ultPos - 1).time);
+        }
+
+        return velocidad;
     }
 }
