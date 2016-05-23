@@ -49,6 +49,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private TextView lblLocation, lblmensaje;
     private Button btnShowLocation, btnStartLocationUpdates;
 
+    private User userCurrent;
+
     //Variables funcionalidades
     boolean firstItem = false;  //Primer elemento de localización registrado (No tiene antecesor de comparación).
     private List<Localizacion> listaLocalizacion = null;
@@ -61,49 +63,66 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.d(TAG, "EJECUCIÓN: onCreate()");
 
         DBHandler db = new DBHandler(this);
 
         //Instancio objeto que captura localizaciones
         listaLocalizacion = new ArrayList<Localizacion>();
 
+        //Reconocer el usuario logueado en el aplicativo.
+        userCurrent = new User();
+        userCurrent.idUser = 123; //LLega el ID del usuario que se loguea en la aplicación.
+        userCurrent = db.getUser(userCurrent.idUser);
+        Log.d(TAG, "Valida existencia del usuario en BD");
+
+        //Verifica si los servicios de localización estan disponibles para el dispositivo
+        if (checkPlayServices()) {
+            buildGoogleApiClient();//Establece conexión con el servicio de localizacion
+            createLocationRequest();//Crea el objeto encargado de hacer peticiones al servicio de localizacion
+        }
+
         lblLocation = (TextView) findViewById(R.id.lblLocation);
         btnShowLocation = (Button) findViewById(R.id.buttonShowLocation);
         btnStartLocationUpdates = (Button) findViewById(R.id.buttonLocationUpdates);
 
-        if(checkPlayServices()) {
-            buildGoogleApiClient();
-            createLocationRequest();
+        //Control de Login: Si el número de identificación existe en la BD
+        if(userCurrent != null) {
+
+            btnShowLocation.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    displayLocation();
+                }
+            });
+
+            btnStartLocationUpdates.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    togglePeriodLocationUpdates();
+                }
+            });
+
+            Button btnDataBase = (Button) findViewById(R.id.btn_database);
+
+            btnDataBase.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    Intent dbmanager = new Intent(getApplicationContext(), AndroidDatabaseManager.class);
+                    startActivity(dbmanager);
+                }
+            });
         }
-
-        btnShowLocation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                displayLocation();
-            }
-        });
-
-        btnStartLocationUpdates.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                togglePeriodLocationUpdates();
-            }
-        });
-
-        Button btnDataBase =(Button) findViewById(R.id.btn_database);
-
-        btnDataBase.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v)
-            {
-                Intent dbmanager = new Intent(getApplicationContext(), AndroidDatabaseManager.class);
-                startActivity(dbmanager);
-            }
-        });
+        else
+        {
+            Log.d(TAG, "Usuario no registrado en BD");
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        Log.d(TAG, "EJECUCIÓN: onStart()");
+
         if(mGoogleApiClient != null) {
             mGoogleApiClient.connect();
         }
@@ -112,7 +131,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     protected void onResume() {
         super.onResume();
-
+        Log.d(TAG, "EJECUCIÓN: onResume()");
         checkPlayServices();
         if(mGoogleApiClient.isConnected() && mRequestLocationUpdates) {
             startLocationUpdates();
@@ -122,7 +141,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     protected void onStop() {
         super.onStop();
-
+        Log.d(TAG, "EJECUCIÓN: onStop()");
         if(mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
         }
@@ -131,15 +150,16 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d(TAG, "EJECUCIÓN: onPause()");
         stopLocationUpdates();
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private void displayLocation() {
+        Log.d(TAG, "EJECUCIÓN: displayLocation()");
         //Defino variable para solicitar datos de ultima localización
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         Localizacion ultimaLocalizacion = new Localizacion();
-        Log.d(TAG, "Nueva localización identificada");
 
         //Definición de variables para conectar BD
         DBHandler dbHandler = new DBHandler(this);
@@ -213,6 +233,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     private void togglePeriodLocationUpdates() {
+        Log.d(TAG, "EJECUCIÓN: togglePeriodLocationUpdates()");
         if(!mRequestLocationUpdates) {
             btnStartLocationUpdates.setText(getString(R.string.btn_stop_location_updates));
 
@@ -229,6 +250,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     protected synchronized void buildGoogleApiClient() {
+        Log.d(TAG, "EJECUCIÓN: buildGoogleApiClient()");
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -236,6 +258,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     protected void createLocationRequest() {
+        Log.d(TAG, "EJECUCIÓN: createLocationRequest()");
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(UPDATE_INTERVAL);
         mLocationRequest.setFastestInterval(FATEST_INTERVAL);
@@ -244,6 +267,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     private boolean checkPlayServices() {
+        Log.d(TAG, "EJECUCIÓN: checkPlayServices()");
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
         if(resultCode != ConnectionResult.SUCCESS) {
             if(GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
@@ -259,14 +283,17 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     protected void startLocationUpdates() {
-
+        Log.d(TAG, "EJECUCIÓN: startLocationUpdates()");
         //Borrar localizaciones en la lista, garantizar un nuevo recorrido
-        listaLocalizacion.clear();
+        if(listaLocalizacion.size() != 0) {
+            listaLocalizacion.clear();
+        }
 
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
     protected void stopLocationUpdates() {
+        Log.d(TAG, "EJECUCIÓN: stopLocationUpdates()");
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
 
         //Instanciar objeto para registrar recorrido en BD
@@ -286,6 +313,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     @Override
     public void onConnected(Bundle bundle) {
+        Log.d(TAG, "EJECUCIÓN: onConnected(Bundle bundle)");
         displayLocation();
 
         if(mRequestLocationUpdates) {
@@ -295,12 +323,13 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     @Override
     public void onConnectionSuspended(int i) {
+        Log.d(TAG, "EJECUCIÓN: onConnectionSuspended(int i)");
         mGoogleApiClient.connect();
     }
 
     @Override
     public void onLocationChanged(Location location) {
-
+        Log.d(TAG, "EJECUCIÓN: onLocationChanged(Location location)");
         mLastLocation = location;
 
         //Muestra mensaje temporal
@@ -311,6 +340,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.d(TAG, "EJECUCIÓN: onConnectionFailed(ConnectionResult connectionResult)");
         Log.i(TAG, "Connection failed: " + connectionResult.getErrorCode());
     }
 
