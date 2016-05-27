@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.example.andrei.locationapidemo.RestfulWebService">
+
+   <ScrollView
+       android:layout_width="match_parent"
+       android:layout_height="match_parent">
+
+       <LinearLayout
+           android:id="@+id/ll"
+           android:layout_width="wrap_content"
+           android:layout_height="fill_parent"
+           android:orientation="vertical">
+
+           <EditText
+               android:id="@+id/userinput"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content" />
+
+           <Button
+               android:id="@+id/getservicedata"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:gravity="center_horizontal"
+               />
+
+           <TextView
+               android:id="@+id/serverDataReceived"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:text=""/>
+           
+           <TextView
+               android:id="@+id/rawJsonData"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:text="To receive JSON data from Server click the above button"/>
+
+           <TextView
+               android:id="@+id/parsedJSONData"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:text="Following is the parsed JSON Data"/>
+
+           <TextView
+               android:id="@+id/showParsedJSON"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content" />
+
+       </LinearLayout>
+
+   </ScrollView>
+
+</android.support.design.widget.CoordinatorLayout>

@@ -1,16 +1,13 @@
 package com.example.andrei.locationapidemo;
 
 import android.annotation.TargetApi;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Build;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.FloatMath;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -23,7 +20,6 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,7 +72,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         userCurrent = db.getUser(userCurrent.idUser);
         Log.d(TAG, "Valida existencia del usuario en BD");
 
-        //Verifica si los servicios de localización estan disponibles para el dispositivo
+        //Verifica si los servicios de localización estan disponibles para el dispositivo. El metodo onResume() requiere conexion establecida y request location declarado
         if (checkPlayServices()) {
             buildGoogleApiClient();//Establece conexión con el servicio de localizacion
             createLocationRequest();//Crea el objeto encargado de hacer peticiones al servicio de localizacion
@@ -114,8 +110,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
         else
         {
+            setContentView(R.layout.user_not_authenticate);
             Log.d(TAG, "Usuario no registrado en BD");
         }
+
     }
 
     @Override

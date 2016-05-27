@@ -8,4 +8,6 @@
     <string name="btn_start_location_updates">START LOCATION UPDATES</string>
     <string name="btn_stop_location_updates">STOP LOCATION UPDATES</string>
     <string name="btn_database">OPEN DATABASE</string>
+    <string name="user_not_authenticate">Usuario No Autenticado</string>
+    <string name="title_activity_restful_web_service">RestfulWebService</string>
 </resources>
